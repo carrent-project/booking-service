@@ -2,7 +2,13 @@ import { Injectable, HttpException, Inject } from "@nestjs/common";
 import { PrismaService } from "./prisma.service";
 import { internalErrorHandler } from "./utils";
 import { ClientProxy } from "@nestjs/microservices";
-import { Booking, CarStatus, CreateBookingDto, EBookingStatus } from "@carrent/shared";
+import {
+  Booking,
+  CarStatus,
+  CreateBookingDto,
+  EBookingStatus,
+  PaginatedBookingResponse,
+} from "@carrent/shared";
 import { firstValueFrom } from "rxjs";
 
 @Injectable()
@@ -12,26 +18,42 @@ export class BookingService {
     private prisma: PrismaService,
   ) {}
 
-  async getBookingList(): Promise<Booking[]> {
+  async getBookingList(
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<PaginatedBookingResponse> {
     try {
-      const bookingList = await this.prisma.booking.findMany({
-        select: {
-          id: true,
-          carId: true,
-          userId: true,
-          totalPrice: true,
-          status: true,
-          startDate: true,
-          endDate: true,
-          createdAt: true,
-          updatedAt: true
-        }
-      })
-      return bookingList.map(booking => ({
-        ...booking,
-        status: booking.status as EBookingStatus
-      }))
-    } catch(error) {
+      const skip = (page - 1) * limit;
+      const [bookingList, total] = await this.prisma.$transaction([
+        this.prisma.booking.findMany({
+          skip,
+          take: limit,
+          orderBy: { endDate: 'desc' },
+          select: {
+            id: true,
+            carId: true,
+            userId: true,
+            totalPrice: true,
+            status: true,
+            startDate: true,
+            endDate: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        }),
+        this.prisma.booking.count()
+      ]);
+      return {
+        data: bookingList.map((booking) => ({
+          ...booking,
+          status: booking.status as EBookingStatus,
+        })),
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }

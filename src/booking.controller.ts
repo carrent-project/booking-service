@@ -8,9 +8,9 @@ export class BookingController {
   constructor(private readonly bookingService: BookingService) {}
 
   @MessagePattern("booking.get-booking-list")
-  async getBookingList() {
+  async getBookingList(@Payload() data: { page: number; limit: number }) {
     try {
-      return await this.bookingService.getBookingList()
+      return await this.bookingService.getBookingList(data.page, data.limit)
     } catch(error) {
       console.log("[Booking Microservice] Getting booking list error:", error);
       throw new RpcException({
