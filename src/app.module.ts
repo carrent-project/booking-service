@@ -8,11 +8,11 @@ import { BookingService } from './booking.service';
   imports: [
     ClientsModule.register([
       {
-        name: 'BOOKING_SERVICE',
+        name: 'CARS_SERVICE',
         transport: Transport.TCP,
         options: {
           host: 'localhost',
-          port: 5004,
+          port: 5003,
         },
       },
     ]),
