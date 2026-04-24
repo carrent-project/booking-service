@@ -28,7 +28,7 @@ export class BookingService {
         this.prisma.booking.findMany({
           skip,
           take: limit,
-          orderBy: { endDate: 'desc' },
+          orderBy: { endDate: "desc" },
           select: {
             id: true,
             carId: true,
@@ -41,7 +41,7 @@ export class BookingService {
             updatedAt: true,
           },
         }),
-        this.prisma.booking.count()
+        this.prisma.booking.count(),
       ]);
       return {
         data: bookingList.map((booking) => ({
@@ -147,6 +147,80 @@ export class BookingService {
 
       console.error("Unexpected error during creating booking:", error);
       throw internalErrorHandler(500, "Creating booking failed");
+    }
+  }
+
+  async removeBooking(id: string): Promise<string> {
+    try {
+      const foundBooking = await this.prisma.booking.findUnique({
+        where: { id },
+      });
+      if (!foundBooking) {
+        throw internalErrorHandler(404, `Booking with id "${id}" is not found`);
+      }
+      if (
+        foundBooking.status !== EBookingStatus.CANCELLED &&
+        foundBooking.status !== EBookingStatus.COMPLETED
+      ) {
+        throw internalErrorHandler(
+          400,
+          `Impossible to remove booking with status ${foundBooking.status}`,
+        );
+      }
+      await this.prisma.booking.delete({ where: { id } });
+      return foundBooking.id;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      console.error("Unexpected error during removing booking:", error);
+      throw internalErrorHandler(500, "Creating removing failed");
+    }
+  }
+
+  async changeBookingStatus(
+    id: string,
+    newStatus: EBookingStatus,
+    userId: string,
+    isAdmin: boolean,
+  ): Promise<Booking> {
+    try {
+      const foundBooking = await this.prisma.booking.findUnique({
+        where: { id },
+      });
+
+      if (!foundBooking) {
+        throw internalErrorHandler(404, `Booking with id "${id}" is not found`);
+      }
+      if (!isAdmin && foundBooking.userId !== userId) {
+        throw internalErrorHandler(
+          403,
+          "You are not the owner of this booking",
+        );
+      }
+      if (!isAdmin && newStatus !== EBookingStatus.CANCELLED) {
+        throw internalErrorHandler(
+          400,
+          "User can only cancel their own booking",
+        );
+      }
+
+      const bookingWithNewStatus = await this.prisma.booking.update({
+        where: { id },
+        data: { status: newStatus },
+      });
+      return {
+        ...bookingWithNewStatus,
+        status: bookingWithNewStatus.status as EBookingStatus,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      console.error("Unexpected error during changing booking status:", error);
+      throw internalErrorHandler(500, "Changing booking status failed");
     }
   }
 }
