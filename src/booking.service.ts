@@ -21,14 +21,17 @@ export class BookingService {
   async getBookingList(
     page: number = 1,
     limit: number = 10,
+    status?: EBookingStatus
   ): Promise<PaginatedBookingResponse> {
     try {
       const skip = (page - 1) * limit;
+      const where = status ? { status } : {}
       const [bookingList, total] = await this.prisma.$transaction([
         this.prisma.booking.findMany({
           skip,
           take: limit,
-          orderBy: { endDate: "desc" },
+          orderBy: { endDate: "asc" },
+          where,
           select: {
             id: true,
             carId: true,
