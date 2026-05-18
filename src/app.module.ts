@@ -3,6 +3,8 @@ import { BookingController } from './booking.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PrismaService } from './prisma.service';
 import { BookingService } from './booking.service';
+import { ScheduleModule } from '@nestjs/schedule';
+import { BookingCronService } from './booking-cron.service';
 
 @Module({
   imports: [
@@ -16,8 +18,9 @@ import { BookingService } from './booking.service';
         },
       },
     ]),
+    ScheduleModule.forRoot()
   ],
   controllers: [BookingController],
-  providers: [BookingService, PrismaService],
+  providers: [BookingCronService, BookingService, PrismaService],
 })
 export class BookingModule {}
