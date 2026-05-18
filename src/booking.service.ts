@@ -6,6 +6,7 @@ import {
   Booking,
   CarStatus,
   CreateBookingDto,
+  CreateBookingResponse,
   EBookingStatus,
   PaginatedBookingResponse,
 } from "@carrent/shared";
@@ -21,11 +22,11 @@ export class BookingService {
   async getBookingList(
     page: number = 1,
     limit: number = 10,
-    status?: EBookingStatus
+    status?: EBookingStatus,
   ): Promise<PaginatedBookingResponse> {
     try {
       const skip = (page - 1) * limit;
-      const where = status ? { status } : {}
+      const where = status ? { status } : {};
       const [bookingList, total] = await this.prisma.$transaction([
         this.prisma.booking.findMany({
           skip,
@@ -66,7 +67,10 @@ export class BookingService {
     }
   }
 
-  async createBooking(dto: CreateBookingDto, userId: string): Promise<string> {
+  async createBooking(
+    dto: CreateBookingDto,
+    userId: string,
+  ): Promise<CreateBookingResponse> {
     try {
       const now = new Date();
       const startDate = new Date(dto.startDate);
@@ -128,6 +132,8 @@ export class BookingService {
       };
       const booking = await this.prisma.booking.create({ data });
 
+      const paymentUrl = `http://localhost:3333?paymentId=${booking.id}&amount=${booking.totalPrice}`;
+
       try {
         if (booking) {
           await firstValueFrom(
@@ -142,7 +148,7 @@ export class BookingService {
         throw internalErrorHandler(500, "Failed to update car status");
       }
 
-      return booking.id;
+      return { id: booking.id, paymentUrl };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -225,5 +231,27 @@ export class BookingService {
       console.error("Unexpected error during changing booking status:", error);
       throw internalErrorHandler(500, "Changing booking status failed");
     }
+  }
+
+  async updateStatusAfterPayment(bookingId: string, status: string) {
+    if (status !== "CANCELLED" && status !== "ACTIVE") {
+      throw internalErrorHandler(400, "Unhandled payment status");
+    }
+
+    const foundBooking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+    });
+
+    if (!foundBooking) {
+      throw internalErrorHandler(
+        404,
+        `Booking with id "${bookingId}" is not found`,
+      );
+    }
+
+    return await this.prisma.booking.update({
+      where: { id: bookingId },
+      data: { status },
+    });
   }
 }
