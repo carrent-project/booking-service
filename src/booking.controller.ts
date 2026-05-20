@@ -20,6 +20,20 @@ export class BookingController {
     }
   }
 
+  @MessagePattern("booking.get-booking-by-id")
+  async getBookingById(@Payload() data: { id: string }) {
+    try {
+      return await this.bookingService.getBookingById(data.id);
+    } catch (error: any) {
+      console.log("[Booking Microservice] Getting booking by id error:", error);
+      throw new RpcException({
+        statusCode: error.status || 500,
+        message: error.message || "Internal server error",
+      });
+    }
+  }
+
+
   @MessagePattern("booking.create-booking")
   async createBooking(
     @Payload() data: { dto: CreateBookingDto; userId: string },

@@ -67,6 +67,38 @@ export class BookingService {
     }
   }
 
+  async getBookingById(id: string) {
+    try {
+      const foundBooking = await this.prisma.booking.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          userId: true,
+          carId: true,
+          startDate: true,
+          endDate: true,
+          totalPrice: true,
+          status: true,
+          paymentUrl: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      if (!foundBooking) {
+        throw internalErrorHandler(404, "Booking is not found by id");
+      }
+      return foundBooking
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      console.error("Unexpected error during getting booking by id:", error);
+      throw internalErrorHandler(500, "Getting booking by id failed");
+    }
+  }
+
   async createBooking(
     dto: CreateBookingDto,
     userId: string,
