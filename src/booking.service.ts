@@ -16,6 +16,7 @@ import { firstValueFrom } from "rxjs";
 export class BookingService {
   constructor(
     @Inject("CARS_SERVICE") private carsClient: ClientProxy,
+    @Inject("REVIEWS_SERVICE") private reviewsClient: ClientProxy,
     private prisma: PrismaService,
   ) {}
 
@@ -88,7 +89,7 @@ export class BookingService {
       if (!foundBooking) {
         throw internalErrorHandler(404, "Booking is not found by id");
       }
-      return foundBooking
+      return foundBooking;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -208,6 +209,17 @@ export class BookingService {
           `Impossible to remove booking with status ${foundBooking.status}`,
         );
       }
+      await firstValueFrom(
+        this.carsClient.send("cars.update-car-status", {
+          id: foundBooking.carId,
+          status: CarStatus.AVAILABLE,
+        }),
+      );
+      await firstValueFrom(
+        this.reviewsClient.send("reviews.remove-review-by-booking-id", {
+          bookingId: id,
+        }),
+      );
       await this.prisma.booking.delete({ where: { id } });
       return foundBooking.id;
     } catch (error) {

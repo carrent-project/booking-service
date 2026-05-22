@@ -18,6 +18,16 @@ import { BookingCronService } from './booking-cron.service';
         },
       },
     ]),
+    ClientsModule.register([
+      {
+        name: 'REVIEWS_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: 'localhost',
+          port: 5006,
+        },
+      },
+    ]),
     ScheduleModule.forRoot()
   ],
   controllers: [BookingController],
