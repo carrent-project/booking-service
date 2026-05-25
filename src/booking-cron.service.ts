@@ -14,7 +14,6 @@ export class BookingCronService {
   @Cron("0 0 * * *")
   async completeExpiredBookings() {
     const now = new Date();
-    // Находим бронирования, которые нужно завершить
     const expiredBookings = await this.prisma.booking.findMany({
       where: {
         status: "ACTIVE",
@@ -24,13 +23,11 @@ export class BookingCronService {
     });
     if (expiredBookings.length === 0) return;
 
-    // Обновляем их статус
     await this.prisma.booking.updateMany({
       where: { id: { in: expiredBookings.map((b) => b.id) } },
       data: { status: "COMPLETED" },
     });
 
-    // Для каждого автомобиля обновляем статус
     for (const booking of expiredBookings) {
       try {
         await firstValueFrom(

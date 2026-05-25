@@ -24,7 +24,7 @@ import { BookingCronService } from './booking-cron.service';
         transport: Transport.TCP,
         options: {
           host: 'localhost',
-          port: 5006,
+          port: 5005,
         },
       },
     ]),

@@ -215,11 +215,11 @@ export class BookingService {
           status: CarStatus.AVAILABLE,
         }),
       );
-      await firstValueFrom(
-        this.reviewsClient.send("reviews.remove-review-by-booking-id", {
-          bookingId: id,
-        }),
-      );
+      // await firstValueFrom(
+      //   this.reviewsClient.send("reviews.remove-review-by-booking-id", {
+      //     bookingId: id,
+      //   }),
+      // );
       await this.prisma.booking.delete({ where: { id } });
       return foundBooking.id;
     } catch (error) {
@@ -228,7 +228,7 @@ export class BookingService {
       }
 
       console.error("Unexpected error during removing booking:", error);
-      throw internalErrorHandler(500, "Creating removing failed");
+      throw internalErrorHandler(500, "Removing booking failed");
     }
   }
 
