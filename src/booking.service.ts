@@ -210,16 +210,16 @@ export class BookingService {
         );
       }
       await firstValueFrom(
+        this.reviewsClient.send("reviews.remove-review-by-booking-id", {
+          bookingId: id,
+        }),
+      );
+      await firstValueFrom(
         this.carsClient.send("cars.update-car-status", {
           id: foundBooking.carId,
           status: CarStatus.AVAILABLE,
         }),
       );
-      // await firstValueFrom(
-      //   this.reviewsClient.send("reviews.remove-review-by-booking-id", {
-      //     bookingId: id,
-      //   }),
-      // );
       await this.prisma.booking.delete({ where: { id } });
       return foundBooking.id;
     } catch (error) {

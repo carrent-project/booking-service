@@ -11,7 +11,7 @@ export class BookingCronService {
     private prisma: PrismaService,
   ) {}
 
-  @Cron("0 0 * * *")
+  @Cron("* * * * *")
   async completeExpiredBookings() {
     const now = new Date();
     const expiredBookings = await this.prisma.booking.findMany({
