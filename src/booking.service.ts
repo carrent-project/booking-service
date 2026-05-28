@@ -209,11 +209,20 @@ export class BookingService {
           `Impossible to remove booking with status ${foundBooking.status}`,
         );
       }
-      await firstValueFrom(
-        this.reviewsClient.send("reviews.remove-review-by-booking-id", {
+
+      const foundReview = await firstValueFrom(
+        this.reviewsClient.send("reviews.get-review-by-booking-id", {
           bookingId: id,
         }),
       );
+
+      if (foundReview) {
+        await firstValueFrom(
+          this.reviewsClient.send("reviews.remove-review-by-booking-id", {
+            bookingId: id,
+          }),
+        );
+      }
       await firstValueFrom(
         this.carsClient.send("cars.update-car-status", {
           id: foundBooking.carId,
